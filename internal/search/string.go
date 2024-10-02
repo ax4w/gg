@@ -9,7 +9,7 @@ func color(str string, start, ln int) string {
 func String(lines []string, query string, ic bool) (res []string) {
 	for _, v := range lines {
 		if ic {
-			if i := strings.Index(strings.ToLower(v), query); i != -1 {
+			if i := strings.Index(strings.ToLower(v), strings.ToLower(query)); i != -1 {
 				res = append(res, color(v, i, i+len(query)))
 			}
 		} else {
