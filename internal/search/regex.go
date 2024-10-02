@@ -15,7 +15,6 @@ func color(str string, locations [][]int) string {
 		return str
 	}
 
-	// Sort locations in descending order of start index
 	sort.Slice(locations, func(i, j int) bool {
 		return locations[i][0] > locations[j][0]
 	})

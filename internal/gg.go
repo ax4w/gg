@@ -29,11 +29,9 @@ func (g GG) Start() {
 			result: make(map[int][]string),
 		}
 	)
-	println("Result for name:", g.Name)
 	if g.Ic {
 		g.Q = "(?i)" + g.Q
 	}
-	println("using expr", g.Q)
 	expr, err := regexp.Compile(g.Q)
 	if err != nil {
 		panic(err.Error())
@@ -49,6 +47,7 @@ func (g GG) Start() {
 		}(v, g.Q, i)
 	}
 	wg.Wait()
+	println("Result for name:", g.Name)
 	for i := 0; i < len(g.Pool.Lines); i++ {
 		for _, v := range res.result[i] {
 			println(v)

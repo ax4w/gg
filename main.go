@@ -5,7 +5,10 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
+	"runtime"
 	"strings"
+	"sync"
 
 	"github.com/ax4w/gg/internal"
 	"github.com/ax4w/gg/internal/pool"
@@ -46,7 +49,7 @@ func file(p string) {
 		Rx:   false,
 		Ic:   *ignoreCase,
 		P:    p,
-		Q:    strings.TrimSpace(*query),
+		Q:    regexp.QuoteMeta(strings.TrimSpace(*query)),
 		Cz:   *chunkSize,
 	}.Start()
 }
@@ -57,16 +60,26 @@ func folder(p string) {
 		fmt.Fprint(os.Stderr, err.Error())
 		return
 	}
+	var wg sync.WaitGroup
 	for _, entry := range entries {
 		if entry.IsDir() {
 			if *recursive {
-				folder(filepath.Join(p, entry.Name()))
+				wg.Add(1)
+				go func(p, name string) {
+					folder(filepath.Join(p, name))
+					wg.Done()
+				}(p, entry.Name())
 			}
 		} else {
-			file(filepath.Join(p, entry.Name()))
-		}
+			wg.Add(1)
+			go func(p, name string) {
+				file(filepath.Join(p, name))
+				wg.Done()
+			}(p, entry.Name())
 
+		}
 	}
+	wg.Wait()
 }
 
 func piped() {
@@ -74,7 +87,7 @@ func piped() {
 }
 
 func main() {
-	//runtime.GOMAXPROCS(runtime.NumCPU())
+	runtime.GOMAXPROCS(runtime.NumCPU())
 	if len(pipe) > 0 {
 		piped()
 	} else {
