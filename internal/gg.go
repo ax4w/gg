@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"regexp"
 	"sync"
 
 	"github.com/ax4w/gg/internal/pool"
@@ -17,22 +18,40 @@ type (
 	}
 	result struct {
 		sync.Mutex
-		result []string
+		result map[int][]string
 	}
 )
 
 func (g GG) Start() {
-	var wg sync.WaitGroup
+	var (
+		wg  sync.WaitGroup
+		res = result{
+			result: make(map[int][]string),
+		}
+	)
 	println("Result for name:", g.Name)
-	for _, v := range g.Pool.Lines {
+	if g.Ic {
+		g.Q = "(?i)" + g.Q
+	}
+	println("using expr", g.Q)
+	expr, err := regexp.Compile(g.Q)
+	if err != nil {
+		panic(err.Error())
+	}
+	for i, v := range g.Pool.Lines {
 		wg.Add(1)
-		go func(lines []string, query string) {
-			for _, v := range search.String(lines, query, g.Ic) {
-				println(v)
-				//println("\033[93m \033[1m", v, "\033[0m")
-			}
+		go func(lines []string, query string, i int) {
+			r := search.Regex(lines, expr, g.Ic)
+			res.Lock()
+			res.result[i] = r
+			res.Unlock()
 			wg.Done()
-		}(v, g.Q)
+		}(v, g.Q, i)
 	}
 	wg.Wait()
+	for i := 0; i < len(g.Pool.Lines); i++ {
+		for _, v := range res.result[i] {
+			println(v)
+		}
+	}
 }
